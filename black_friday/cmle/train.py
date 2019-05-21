@@ -1,14 +1,10 @@
-import datetime
 import os
-import subprocess
-
-from sklearn.preprocessing import LabelEncoder
 import pandas as pd
 from google.cloud import storage
 import xgboost as xgb
 from sklearn.preprocessing import LabelEncoder
 from sklearn.externals import joblib
-
+import logging
 
 def copy_to_gcs(source, dest):
     bucket = storage.Client().bucket(BUCKET)
@@ -22,8 +18,10 @@ OPTIMAL_PARAMS = {}
 
 
 # Crate dirs
+print("creating dirs")
 models_dir = '/tmp/models/'
-os.mkdir(models_dir)
+os.makedirs(models_dir, exist_ok=True)
+
 
 # Define features and target
 features = ['User_ID', 'Product_ID', 'Gender', 'Age', 'Occupation',
@@ -36,9 +34,11 @@ label = 'Purchase'
 
 
 # Read the data
+print("Reading file...")
 df = pd.read_csv('gs://{BUCKET}/data/BlackFriday.csv'.format(BUCKET=BUCKET))
 
 # Train Encoders
+print("Training encoders...")
 encoders = {}
 for cat_feature in categorical_features:
     print('Fitting categorical feature label encoder to:', cat_feature)
@@ -49,13 +49,17 @@ for cat_feature in categorical_features:
 
 # Serialize encoders
 encoder_paths = {}
+print("Writing encoders...")
+transformers_dir = os.path.join(models_dir,'transformers/')
+os.makedirs(transformers_dir, exist_ok=True)
 for encoder in encoders:
-    current_path = os.path.join(models_dir,'transformers', '{}_eocoder.joblib'.format(encoder))
+    current_path = os.path.join(transformers_dir, '{}_eocoder.joblib'.format(encoder))
     joblib.dump(encoders[encoder], current_path)
     encoder_paths[encoder] = current_path
 
 
 # Build Traning set
+print("Encoding Features...")
 df_train = pd.DataFrame(index=df.index.copy())
 for feature in features:
     print(feature)
@@ -70,17 +74,23 @@ for feature in features:
 dtrain = xgb.DMatrix(df_train[features], label=df[label])
 
 # Train XGBoost model
+print('Training the model')
 bst = xgb.train(OPTIMAL_PARAMS, dtrain, 20)
 
 # Export the classifier to a file
+print('Saving the model')
 local_model_path = os.path.join(models_dir, 'model.bst')
 bst.save_model(local_model_path)
 
 # Upload all the files to a bucket
+print('Uploading transformers to bucket...')
 for encoder in encoder_paths:
     dest = os.path.join("gs://", BUCKET, 'models', MODEL_VERSION, 'encoders', encoder + '_eocoder.joblib')
     copy_to_gcs(encoder_paths[encoder], dest)
 
 # Copy model
+print('Uploading model to bucket...')
 dest = os.path.join("gs://", BUCKET, 'models', MODEL_VERSION, 'model', 'model.bst')
 copy_to_gcs(local_model_path, dest)
+
+print('Done!')
