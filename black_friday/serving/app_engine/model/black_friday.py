@@ -1,17 +1,22 @@
 import pandas as pd
 import numpy as np
 
-class GPSTrajectoriesModel:
+class BlackFridayModel:
 
-    FEATURES = []
-
+    # Define features and target
+    FEATURES = ['User_ID', 'Product_ID', 'Gender', 'Age', 'Occupation',
+                u'City_Category', 'Stay_In_Current_City_Years', 'Marital_Status',
+                'Product_Category_1', 'Product_Category_2', 'Product_Category_3']
+    CATEGORICAL_FEATURES = ['User_ID', 'Product_ID', 'Gender', 'Age', 'Occupation',
+                            'City_Category', 'Marital_Status', 'Product_Category_1',
+                            'Product_Category_2', 'Product_Category_3', 'Stay_In_Current_City_Years']
     @staticmethod
     def extract_features(data: dict) -> pd.DataFrame:
 
         df_raw = pd.DataFrame().from_dict(data)
-        features = GPSTrajectoriesModel.extraction_logics(df_raw)
-        df_features = pd.DataFrame().from_dict(features, orient='index').T
-        return df_features[GPSTrajectoriesModel.FEATURES].values.tolist()
+        sample = BlackFridayModel.extraction_logics(df_raw)
+        df_features = pd.DataFrame().from_dict(sample, orient='index').T
+        return df_features[BlackFridayModel.FEATURES].values.tolist()
 
     @staticmethod
     def extraction_logics(df: pd.DataFrame) -> dict:
@@ -23,7 +28,7 @@ class GPSTrajectoriesModel:
         features = {}
 
         # Calculate the speed
-        df = GPSTrajectoriesModel.calc_speed(df)
+        df = BlackFridayModel.calc_speed(df)
 
         # meta
         features['segment'] = df['segment'].iloc[0]

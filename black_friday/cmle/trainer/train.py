@@ -4,7 +4,6 @@ from google.cloud import storage
 import xgboost as xgb
 from sklearn.preprocessing import LabelEncoder
 from sklearn.externals import joblib
-import logging
 
 def copy_to_gcs(source, dest):
     bucket = storage.Client().bucket(BUCKET)
@@ -13,7 +12,7 @@ def copy_to_gcs(source, dest):
 
 
 BUCKET = 'doitintl_black_friday'
-MODEL_VERSION = 'v1'
+MODEL_VERSION = 'v2'
 OPTIMAL_PARAMS = {}
 
 
@@ -85,12 +84,12 @@ bst.save_model(local_model_path)
 # Upload all the files to a bucket
 print('Uploading transformers to bucket...')
 for encoder in encoder_paths:
-    dest = os.path.join("gs://", BUCKET, 'models', MODEL_VERSION, 'encoders', encoder + '_eocoder.joblib')
+    dest = os.path.join('models', MODEL_VERSION, 'encoders', encoder + '_eocoder.joblib')
     copy_to_gcs(encoder_paths[encoder], dest)
 
 # Copy model
 print('Uploading model to bucket...')
-dest = os.path.join("gs://", BUCKET, 'models', MODEL_VERSION, 'model', 'model.bst')
+dest = os.path.join('models', MODEL_VERSION, 'model', 'model.bst')
 copy_to_gcs(local_model_path, dest)
 
 print('Done!')
