@@ -84,7 +84,7 @@ bst.save_model(local_model_path)
 # Upload all the files to a bucket
 print('Uploading transformers to bucket...')
 for encoder in encoder_paths:
-    dest = os.path.join('models', MODEL_VERSION, 'encoders', encoder + '_eocoder.joblib')
+    dest = os.path.join('models', MODEL_VERSION, 'encoders', encoder + '_encoder.joblib')
     copy_to_gcs(encoder_paths[encoder], dest)
 
 # Copy model

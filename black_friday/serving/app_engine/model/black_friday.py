@@ -1,53 +1,83 @@
 import pandas as pd
 import numpy as np
+import pandas as pd
+import numpy as np
+from sklearn.preprocessing import LabelEncoder
+from sklearn.externals import joblib
+import os
+from googleapiclient import discovery
+from google.cloud import storage
+
+def download_blob(bucket_name, source_blob_name, destination_file_name):
+    """Downloads a blob from the bucket."""
+    storage_client = storage.Client()
+    bucket = storage_client.get_bucket(bucket_name)
+    blob = bucket.blob(source_blob_name)
+
+    blob.download_to_filename(destination_file_name)
+
+    print('Blob {} downloaded to {}.'.format(
+        source_blob_name,
+        destination_file_name))
 
 class BlackFridayModel:
 
     # Define features and target
-    FEATURES = ['User_ID', 'Product_ID', 'Gender', 'Age', 'Occupation',
+    encoder_names = ['User_ID', 'Product_ID', 'Gender', 'Age', 'Occupation', 'City_Category',
+                     'Stay_In_Current_City_Years', 'Marital_Status', 'Product_Category_1',
+                     'Product_Category_2', 'Product_Category_3']
+    features = ['User_ID', 'Product_ID', 'Gender', 'Age', 'Occupation',
                 u'City_Category', 'Stay_In_Current_City_Years', 'Marital_Status',
                 'Product_Category_1', 'Product_Category_2', 'Product_Category_3']
-    CATEGORICAL_FEATURES = ['User_ID', 'Product_ID', 'Gender', 'Age', 'Occupation',
+    categorical_features = ['User_ID', 'Product_ID', 'Gender', 'Age', 'Occupation',
                             'City_Category', 'Marital_Status', 'Product_Category_1',
                             'Product_Category_2', 'Product_Category_3', 'Stay_In_Current_City_Years']
+
+    BUCKET = 'doitintl_black_friday'
+    MODEL_VERSION = 'v2'
+    model_gcs_path = os.path.join('models/', MODEL_VERSION + "/", 'encoders/')
+    encoders_dir = '/tmp/models/encoders'
+    os.makedirs(encoders_dir, exist_ok=True)
+    models_dir = '/tmp/models/models/'
+    os.makedirs(models_dir, exist_ok=True)
+
+    def __init__(self):
+        BlackFridayModel.download_encoders()
+        self.encoders = {}
+        self.load_encoders()
+
+
+    def load_encoders(self):
+        encoders = {}
+        for encoder in BlackFridayModel.encoder_names:
+            print("Loading encoder to memoery: ", encoder)
+            encoders[encoder] = joblib.load(os.path.join(BlackFridayModel.encoders_dir,
+                                                              '{}_encoder.joblib'.format(encoder)))
+        return encoders
+
     @staticmethod
-    def extract_features(data: dict) -> pd.DataFrame:
+    def download_encoders():
+        # Download encoders:
+        for encod_name in BlackFridayModel.encoder_names:
+            encoder_file_name = '{}_encoder.joblib'.format(encod_name)
+            gcs_encoder_path = os.path.join(BlackFridayModel.model_gcs_path, encoder_file_name)
+            local_encoder_path = os.path.join(BlackFridayModel.encoders_dir, encoder_file_name)
+            download_blob(BlackFridayModel.BUCKET, gcs_encoder_path, local_encoder_path)
 
-        df_raw = pd.DataFrame().from_dict(data)
-        sample = BlackFridayModel.extraction_logics(df_raw)
-        df_features = pd.DataFrame().from_dict(sample, orient='index').T
-        return df_features[BlackFridayModel.FEATURES].values.tolist()
 
-    @staticmethod
-    def extraction_logics(df: pd.DataFrame) -> dict:
-        """
-        Extracts features from a DataFrame representing a gps trajectory
-        :param df:
-        :return:
-        """
-        features = {}
+    def extract_features(self, df: pd.DataFrame) -> pd.DataFrame:
 
-        # Calculate the speed
-        df = BlackFridayModel.calc_speed(df)
+        df_train = pd.DataFrame(index=df.index.copy())
 
-        # meta
-        features['segment'] = df['segment'].iloc[0]
+        for feature in BlackFridayModel.features:
+            print("Transforming features: ", feature)
+            if feature in BlackFridayModel.categorical_features:
+                vals = self.encoders[feature].transform(df[feature].dropna())
+                tmp_srs = df[feature].copy()
+                tmp_srs.loc[df[feature].notnull()] = vals
+                df_train = df_train.merge(tmp_srs, left_index=True, right_index=True, how='left')
+            else:
+                df_train[feature] = df[feature].copy()
 
-        # location
-        features['latitude_mean'] = df['latitude'].mean()
-        features['longitude_mean'] = df['longitude'].mean()
-        features['latitude_std'] = df['latitude'].std()
-        features['longitude_std'] = df['longitude'].std()
-
-        # velocity
-        hist, _ = np.histogram(df['speed'], bins=range(0, 200, 5), normed=True)
-        for i in range(0, int(195 / 5)):
-            features['velocity_%d' % (i * 5)] = hist[i]
-
-        # sample freq
-        features['time_diff_mean'] = df['time_diff'].mean()
-        features['time_diff_median'] = df['time_diff'].median()
-        features['time_diff_std'] = df['time_diff'].std()
-
-        return features
+        return df_train.copy()
 

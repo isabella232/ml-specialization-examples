@@ -2,7 +2,8 @@ from oauth2client.client import GoogleCredentials
 from googleapiclient import discovery
 from flask import Flask, request
 import json
-
+from model.black_friday import BlackFridayModel
+import pandas as pd
 
 VERSION_NAME = 'v2'
 MODEL_NAME = 'transportation_mode'
@@ -10,20 +11,7 @@ PROJECT_ID = 'gad-playground-212407'
 
 app = Flask(__name__)
 
-# Initialize objects
-gps_model = GPSClasses()
-
-def download_blob(bucket_name, source_blob_name, destination_file_name):
-    """Downloads a blob from the bucket."""
-    storage_client = storage.Client()
-    bucket = storage_client.get_bucket(bucket_name)
-    blob = bucket.blob(source_blob_name)
-
-    blob.download_to_filename(destination_file_name)
-
-    print('Blob {} downloaded to {}.'.format(
-        source_blob_name,
-        destination_file_name))
+black_friday_model = BlackFridayModel()
 
 
 @app.route('/mode_prediction', methods=['POST'])
@@ -36,7 +24,8 @@ def generate_predictions():
     records = payload['gps_trajectories']
 
     # Extract features from data
-    features = GPSTrajectoriesModel.extract_features(records)
+    df_raw = pd.Dataframe(records)
+    features = BlackFridayModel.extract_features(df_raw)
 
     # Invokes Cloud ML model
     response = _query_model(features)
@@ -50,25 +39,27 @@ def _query_model(data):
     :param data: tuple of strings with account-billing-ids
     :return: Ordered list on class names ["car", "car" ... ]
     """
-    model_name = 'projects/{}/models/{}'.format(PROJECT_ID, MODEL_NAME)
-    model_name += '/versions/{}'.format(VERSION_NAME)
+    model = 'black_friday'
+    project = 'gad-playground-212407'
+    version = 'v2'
 
-    credentials = GoogleCredentials.get_application_default()
+    instances = data.values.tolist()
 
-    ml = discovery.build('ml', 'v1', credentials=credentials)
+    service = discovery.build('ml', 'v1')
+    name = 'projects/{}/models/{}'.format(project, model)
 
-    # Create a dictionary with the fields from the request body.
-    request_body = {"instances": data}
+    if version is not None:
+        name += '/versions/{}'.format('v1')
 
-    # Create a request to call projects.models.create.
-    request = ml.projects().predict(
-        name=model_name,
-        body=request_body)
-    response = request.execute()
+    response = service.projects().predict(
+        name=name,
+        body={'instances': instances}
+    ).execute()
 
-    response = GPSClasses.parse_results(response, gps_model.classes)
+    if 'error' in response:
+        raise RuntimeError(response['error'])
 
-    return response
+    return response['predictions']
 
 
 if __name__ == '__main__':
