@@ -26,8 +26,3 @@ The code runs with default xgboost params. You can run a hyper parameters tuning
 ```sh
 $ bash submit_hyperparam.sh
 ```
-
-
-
-
-
