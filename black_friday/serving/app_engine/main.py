@@ -21,7 +21,7 @@ def generate_predictions():
     :return:
     """
     payload = request.json
-    records = payload['gps_trajectories']
+    records = payload['features']
 
     # Extract features from data
     df_raw = pd.Dataframe(records)
