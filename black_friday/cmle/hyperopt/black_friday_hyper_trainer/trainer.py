@@ -1,9 +1,10 @@
 import argparse
-import os
+import os, sys
 import pandas as pd
 import xgboost as xgb
 from sklearn.model_selection import train_test_split
 import hypertune
+import subprocess
 from sklearn.preprocessing import LabelEncoder
 from sklearn.externals import joblib
 
@@ -42,8 +43,10 @@ categorical_features = ['User_ID', 'Product_ID', 'Gender', 'Age', 'Occupation',
 label = 'Purchase'
 
 # Read the data
+subprocess.check_call(['gsutil', 'cp', 'gs://{BUCKET}/data/BlackFriday.csv'.format(BUCKET=BUCKET),
+                       '/tmp/black_friday_train.csv'], stderr=sys.stdout)
 print("Reading file...")
-df = pd.read_csv('gs://{BUCKET}/data/BlackFriday.csv'.format(BUCKET=BUCKET))
+df = pd.read_csv('/tmp/black_friday_train.csv')
 
 # Train Encoders
 print("Training encoders...")
