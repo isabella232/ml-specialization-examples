@@ -1,8 +1,5 @@
 import argparse
-import datetime
 import os
-import subprocess
-import sys
 import pandas as pd
 import xgboost as xgb
 from sklearn.model_selection import train_test_split
@@ -23,6 +20,17 @@ parser.add_argument(
     type=int,
     default=10
 )
+
+
+parser.add_argument(
+    '--BUCKET',
+    help='GCS bucket',
+    required=True,
+)
+
+
+args = parser.parse_args()
+BUCKET = args.BUCKET
 
 # Define features and target
 features = ['User_ID', 'Product_ID', 'Gender', 'Age', 'Occupation',
@@ -70,7 +78,7 @@ for feature in features:
         df_train[feature] = df[feature].copy()
 
 X_train, X_test, y_train, y_test = train_test_split(df_train[features], df_train[label],
-                                                    train_size=0.7, 4, random_state=0)
+                                                    train_size=0.7, random_state=0)
 dtrain = xgb.DMatrix(X_train, label=y_train)
 
 bst = xgb.train(params={}, dtrain=dtrain, num_boost_round=args.num_boost_round)

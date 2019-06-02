@@ -2,11 +2,11 @@
 
 PROJECT_ID=gad-playground-212407
 BUCKET_ID=doitintl_black_friday
-TRAINING_PACKAGE_PATH="[YOUR-LOCAL-PATH-TO-TRAINING-PACKAGE]/iris_xgboost_trainer/"
-MAIN_TRAINER_MODULE="iris_xgboost_trainer.iris"
+TRAINING_PACKAGE_PATH="/Users/gad/PycharmProjects/ml-specialization-examples/black_friday/cmle/hyperopt/black_friday_hyper_trainer/"
+MAIN_TRAINER_MODULE="black_friday_hyper_trainer.trainer"
 REGION=[REGION]
 RUNTIME_VERSION=1.8
-PYTHON_VERSION=2.7
+PYTHON_VERSION=3.5
 SCALE_TIER=BASIC
 JOB_DIR=gs://$BUCKET_ID/$JOB_NAME
 
@@ -20,4 +20,6 @@ gcloud ml-engine jobs submit training $JOB_NAME \
   --runtime-version $RUNTIME_VERSION \
   --python-version $PYTHON_VERSION \
   --scale-tier BASIC \
-  --config hyperparam.yaml
+  --config hyperparam.yaml \
+   -- \
+   --BUCKET $BUCKET_ID
