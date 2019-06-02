@@ -1,7 +1,7 @@
 from setuptools import find_packages
 from setuptools import setup
 
-REQUIRED_PACKAGES = ['google-cloud-storage','gcsfs', 'xgboost', 'cloudml-hypertune']
+REQUIRED_PACKAGES = ['google-cloud-storage','pandas','gcsfs', 'xgboost', 'cloudml-hypertune']
 
 setup(
     name='trainer',

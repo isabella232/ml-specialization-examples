@@ -65,7 +65,7 @@ for feature in features:
     if feature in categorical_features:
         vals = encoders[feature].transform(df[feature].dropna())
         tmp_srs = df[feature].copy()
-        tmp_srs.loc[df[feature].notnull()]= vals
+        tmp_srs.loc[df[feature].notnull()] = vals
         df_train = df_train.merge(tmp_srs, left_index=True, right_index=True, how='left')
     else:
         df_train[feature] = df[feature].copy()

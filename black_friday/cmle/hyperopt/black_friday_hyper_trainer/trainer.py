@@ -6,7 +6,7 @@ from sklearn.model_selection import train_test_split
 import hypertune
 import subprocess
 from sklearn.preprocessing import LabelEncoder
-from sklearn.externals import joblib
+from google.cloud import storage
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -29,6 +29,17 @@ parser.add_argument(
     required=True,
 )
 
+def download_blob(bucket_name, source_blob_name, destination_file_name):
+    """Downloads a blob from the bucket."""
+    storage_client = storage.Client()
+    bucket = storage_client.get_bucket(bucket_name)
+    blob = bucket.blob(source_blob_name)
+
+    blob.download_to_filename(destination_file_name)
+
+    print('Blob {} downloaded to {}.'.format(
+        source_blob_name,
+        destination_file_name))
 
 args = parser.parse_args()
 BUCKET = args.BUCKET
@@ -43,8 +54,7 @@ categorical_features = ['User_ID', 'Product_ID', 'Gender', 'Age', 'Occupation',
 label = 'Purchase'
 
 # Read the data
-subprocess.check_call(['gsutil', 'cp', 'gs://{BUCKET}/data/BlackFriday.csv'.format(BUCKET=BUCKET),
-                       '/tmp/black_friday_train.csv'], stderr=sys.stdout)
+download_blob(BUCKET, 'data/BlackFriday.csv', '/tmp/black_friday_train.csv')
 print("Reading file...")
 df = pd.read_csv('/tmp/black_friday_train.csv')
 
@@ -57,34 +67,25 @@ for cat_feature in categorical_features:
     le.fit(df[cat_feature])
     encoders[cat_feature] = le
 
-# Serialize encoders
-encoder_paths = {}
-print("Writing encoders...")
-transformers_dir = os.path.join(models_dir, 'transformers/')
-os.makedirs(transformers_dir, exist_ok=True)
-for encoder in encoders:
-    current_path = os.path.join(transformers_dir, '{}_eocoder.joblib'.format(encoder))
-    joblib.dump(encoders[encoder], current_path)
-    encoder_paths[encoder] = current_path
 
 # Build Traning set
 print("Encoding Features...")
 df_train = pd.DataFrame(index=df.index.copy())
 for feature in features:
-    print(feature)
+    print("converting: ", feature)
     if feature in categorical_features:
         vals = encoders[feature].transform(df[feature].dropna())
-        tmp_srs = df[feature].copy()
-        tmp_srs.loc[df[feature].notnull()] = vals
+        tmp_srs = df[[feature]].copy()
+        tmp_srs.loc[df[feature].notnull(),feature] = vals
         df_train = df_train.merge(tmp_srs, left_index=True, right_index=True, how='left')
     else:
         df_train[feature] = df[feature].copy()
 
-X_train, X_test, y_train, y_test = train_test_split(df_train[features], df_train[label],
+X_train, X_test, y_train, y_test = train_test_split(df_train[features].astype(float), df[label].astype(float),
                                                     train_size=0.7, random_state=0)
 dtrain = xgb.DMatrix(X_train, label=y_train)
 
-bst = xgb.train(params={}, dtrain=dtrain, num_boost_round=args.num_boost_round)
+bst = xgb.train(params={}, dtrain=dtrain, num_boost_round=10)
 
 deval = xgb.DMatrix(X_test, label=y_test)
 rmse = float(bst.eval(deval).split(':')[1])
