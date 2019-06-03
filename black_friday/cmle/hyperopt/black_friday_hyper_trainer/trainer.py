@@ -1,10 +1,8 @@
 import argparse
-import os, sys
 import pandas as pd
 import xgboost as xgb
 from sklearn.model_selection import train_test_split
 import hypertune
-import subprocess
 from sklearn.preprocessing import LabelEncoder
 from google.cloud import storage
 
@@ -92,6 +90,6 @@ rmse = float(bst.eval(deval).split(':')[1])
 
 hpt = hypertune.HyperTune()
 hpt.report_hyperparameter_tuning_metric(
-    hyperparameter_metric_tag='my_metric_tag',
+    hyperparameter_metric_tag='rmse',
     metric_value=rmse,
     global_step=1)
