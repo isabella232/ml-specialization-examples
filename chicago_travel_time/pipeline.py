@@ -174,6 +174,8 @@ def validate_model():
 if __name__ == '__main__':
     with open('hyper_param_spec.json', 'r')  as f:
         training_inputs = eval(f.read())
+        training_inputs['jobDir'] = job_dir
+        training_inputs['args'].append('--training_data_path={DATA_DIR}'.format(DATA_DIR=data_dir))
 
     cloudml_client = discovery.build('ml', 'v1')
 

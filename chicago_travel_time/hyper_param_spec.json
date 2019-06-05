@@ -3,7 +3,6 @@
         "masterType": "standard_gpu",
         "args": [
             "--preprocess",
-            "--training_data_path={DATA_DIR}",
             "--validation_split=0.2",
             "--model_type=regression",
             "--hidden_units=120,60,60",
