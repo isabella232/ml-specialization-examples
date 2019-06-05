@@ -1,0 +1,64 @@
+{
+        "scaleTier": "CUSTOM",
+        "masterType": "standard_gpu",
+        "args": [
+            "--preprocess",
+            "--training_data_path={DATA_DIR}",
+            "--validation_split=0.2",
+            "--model_type=regression",
+            "--hidden_units=120,60,60",
+            "--batch_size=128",
+            "--eval_frequency_secs=128",
+            "--optimizer_type=ftrl",
+            "--use_wide",
+            "--embed_categories",
+            "--dnn_learning_rate=0.001",
+            "--dnn_optimizer_type=ftrl"
+        ],
+        "hyperparameters": {
+            "goal": "MINIMIZE",
+            "params": [
+                {
+                    "parameterName": "max_steps",
+                    "minValue": 100,
+                    "maxValue": 60000,
+                    "type": "INTEGER",
+                    "scaleType": "UNIT_LINEAR_SCALE"
+                },
+                {
+                    "parameterName": "learning_rate",
+                    "minValue": 0.0001,
+                    "maxValue": 0.5,
+                    "type": "DOUBLE",
+                    "scaleType": "UNIT_LINEAR_SCALE"
+                },
+                {
+                    "parameterName": "l1_regularization_strength",
+                    "maxValue": 1,
+                    "type": "DOUBLE",
+                    "scaleType": "UNIT_LINEAR_SCALE"
+                },
+                {
+                    "parameterName": "l2_regularization_strength",
+                    "maxValue": 1,
+                    "type": "DOUBLE",
+                    "scaleType": "UNIT_LINEAR_SCALE"
+                },
+                {
+                    "parameterName": "l2_shrinkage_regularization_strength",
+                    "maxValue": 1,
+                    "type": "DOUBLE",
+                    "scaleType": "UNIT_LINEAR_SCALE"
+                }
+            ],
+            "maxTrials": 50,
+            "maxParallelTrials": 10,
+            "hyperparameterMetricTag": "loss",
+            "enableTrialEarlyStopping": True
+        },
+        "region": "us-central1",
+        "jobDir": "{JOB_DIR}",
+        "masterConfig": {
+            "imageUri": "gcr.io/cloud-ml-algos/wide_deep_learner_gpu:latest"
+        }
+    }

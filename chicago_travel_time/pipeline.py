@@ -110,9 +110,12 @@ def monitor_training(cloudml_client, job_name):
     while job_is_running:
         job_results = cloudml_client.projects().jobs().get(name='{}/jobs/{}'.format(project_name, job_name)).execute()
         job_is_running = job_results['state'] == 'RUNNING'
+        if 'completedTrialCount' in job_results['trainingOutput']:
+            completed_trials = job_results['trainingOutput']['completedTrialCount']
+        else:  completed_trials = 0
 
         print(str(datetime.utcnow()),
-              ': Completed {} training trials'.format(job_results['trainingOutput']['completedTrialCount']),
+              ': Completed {} training trials'.format(completed_trials),
               ' Waiting for 5 minutes')
         time.sleep(5 * 60)
     return job_results
@@ -165,73 +168,12 @@ def validate_model():
     if 'error' in response:
         raise RuntimeError(response['error'])
 
-    response['predictions']
+    return response['predictions']
+
 
 if __name__ == '__main__':
-    training_inputs = {
-        "scaleTier": "CUSTOM",
-        "masterType": "standard_gpu",
-        "args": [
-            "--preprocess",
-            "--training_data_path={}".format(data_dir),
-            "--validation_split=0.2",
-            "--model_type=regression",
-            "--hidden_units=120,60,60",
-            "--batch_size=128",
-            "--eval_frequency_secs=128",
-            "--optimizer_type=ftrl",
-            "--use_wide",
-            "--embed_categories",
-            "--dnn_learning_rate=0.001",
-            "--dnn_optimizer_type=ftrl"
-        ],
-        "hyperparameters": {
-            "goal": "MINIMIZE",
-            "params": [
-                {
-                    "parameterName": "max_steps",
-                    "minValue": 100,
-                    "maxValue": 60000,
-                    "type": "INTEGER",
-                    "scaleType": "UNIT_LINEAR_SCALE"
-                },
-                {
-                    "parameterName": "learning_rate",
-                    "minValue": 0.0001,
-                    "maxValue": 0.5,
-                    "type": "DOUBLE",
-                    "scaleType": "UNIT_LINEAR_SCALE"
-                },
-                {
-                    "parameterName": "l1_regularization_strength",
-                    "maxValue": 1,
-                    "type": "DOUBLE",
-                    "scaleType": "UNIT_LINEAR_SCALE"
-                },
-                {
-                    "parameterName": "l2_regularization_strength",
-                    "maxValue": 1,
-                    "type": "DOUBLE",
-                    "scaleType": "UNIT_LINEAR_SCALE"
-                },
-                {
-                    "parameterName": "l2_shrinkage_regularization_strength",
-                    "maxValue": 1,
-                    "type": "DOUBLE",
-                    "scaleType": "UNIT_LINEAR_SCALE"
-                }
-            ],
-            "maxTrials": 50,
-            "maxParallelTrials": 10,
-            "hyperparameterMetricTag": "loss",
-            "enableTrialEarlyStopping": True
-        },
-        "region": "us-central1",
-        "jobDir": "{}".format(job_dir),
-        "masterConfig": {
-            "imageUri": "gcr.io/cloud-ml-algos/wide_deep_learner_gpu:latest"
-        }
-    }
+    with open('hyper_param_spec.json', 'r')  as f:
+        training_inputs = eval(f.read())
 
     cloudml_client = discovery.build('ml', 'v1')
 
@@ -250,9 +192,6 @@ if __name__ == '__main__':
     if CREATE_MODEL == True:
         print('Creating model')
         create_model(cloudml_client)
-
-    print('Deploying version...')
-    deploy_version(cloudml_client, job_results)
 
     print('Deploying version...')
     deploy_version(cloudml_client, job_results)
