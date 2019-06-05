@@ -9,7 +9,7 @@ project_name = 'projects/{}'.format(project_id)
 dataset_id = 'chicago_taxi'
 table_name = 'train_{}'.format(datetime.utcnow().strftime('%Y%m%d%H%M%S'))
 model_name = 'travel_time'
-model_version = 'v3'
+model_version = 'v1'
 bucket_name = 'doit-chicago-taxi'
 data_dir = "gs://doit-chicago-taxi/data/{}.csv".format(table_name)
 job_dir = "gs://doit-chicago-taxi/models/{}".format(model_version)
@@ -109,7 +109,7 @@ def monitor_training(cloudml_client, job_name):
     job_is_running = True
     while job_is_running:
         job_results = cloudml_client.projects().jobs().get(name='{}/jobs/{}'.format(project_name, job_name)).execute()
-        job_is_running = job_results['state'] == 'RUNNING'
+        job_is_running = job_results['state'] in ['RUNNING', 'QUEUED']
         if 'completedTrialCount' in job_results['trainingOutput']:
             completed_trials = job_results['trainingOutput']['completedTrialCount']
         else:  completed_trials = 0
@@ -169,6 +169,7 @@ def validate_model():
         raise RuntimeError(response['error'])
 
     return response['predictions']
+
 
 
 if __name__ == '__main__':
