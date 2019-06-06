@@ -3,18 +3,54 @@ from datetime import datetime
 from googleapiclient import discovery
 import time
 import pandas as pd
+import argparse
 
-project_id = 'gad-playground-212407'
-project_name = 'projects/{}'.format(project_id)
-dataset_id = 'chicago_taxi'
-table_name = 'train_{}'.format(datetime.utcnow().strftime('%Y%m%d%H%M%S'))
-model_name = 'travel_time'
-model_version = 'v1'
-bucket_name = 'doit-chicago-taxi'
-data_dir = "gs://doit-chicago-taxi/data/{}.csv".format(table_name)
-job_dir = "gs://doit-chicago-taxi/models/{}".format(model_version)
-CREATE_MODEL = False
 
+
+def parse_args():
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        '--project_id',
+        help='Google Cloud Project ID',
+        required=True,
+    )
+
+    parser.add_argument(
+        '--dataset_id',
+        help='Name of BigQuery Dataset ID to save training results',
+        type=int,
+        default=10
+    )
+
+    parser.add_argument(
+        '--model_name',
+        help='name of the AI platform model that will be created',
+        required=True,
+    )
+
+    parser.add_argument(
+        '--model_version',
+        help='name of the AI platform model version that will be created',
+        required=True,
+    )
+
+    parser.add_argument(
+        '--bucket_name',
+        help='Name of the staging bucket',
+        required=True,
+    )
+
+    parser.add_argument(
+        '--create_model',
+        help='create a new model? default is False',
+        required=False,
+    )
+    args = parser.parse_args()
+
+
+    return args
 
 def create_train():
     client = bigquery.Client()
@@ -173,6 +209,18 @@ def validate_model():
 
 
 if __name__ == '__main__':
+    args = parse_args()
+    project_id = args.project_id
+    project_name = 'projects/{}'.format(project_id)
+    dataset_id = args.dataset_id
+    table_name = 'train_{}'.format(datetime.utcnow().strftime('%Y%m%d%H%M%S'))
+    model_name = args.model_name
+    model_version = args.model_version
+    bucket_name = args.bucket_name
+    data_dir = "gs://{bucket}/data/{table_name}.csv".format(bucket=bucket_name, table_name=table_name)
+    job_dir = "gs://{bucket}/models/{model_version}".format(bucket=bucket_name, model_version=model_version)
+    CREATE_MODEL = args.create_model
+
     with open('hyper_param_spec.json', 'r')  as f:
         training_inputs = eval(f.read())
         training_inputs['jobDir'] = job_dir
