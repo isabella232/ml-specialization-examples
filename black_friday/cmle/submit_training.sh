@@ -1,9 +1,11 @@
-TRAINER_PACKAGE_PATH="/Users/gad/PycharmProjects/ml-specialization-examples/black_friday/cmle/trainer"
+
+TRAINER_PACKAGE_PATH="[PATH_TO_LOCAL_DIR]/black_friday/cmle/trainer"
 MAIN_TRAINER_MODULE="trainer.train"
-PACKAGE_STAGING_PATH="gs://doitintl_black_friday"
+BUCKET=[YOUR_BUCKET_NAME]
+PACKAGE_STAGING_PATH="gs://$BUCKET"
 now=$(date +"%Y%m%d_%H%M%S")
 JOB_NAME="black_friday_$now"
-JOB_DIR="gs://doitintl_black_friday/training_staging/$JOB_NAME"
+JOB_DIR="gs://$BUCKET/training_staging/$JOB_NAME"
 
 REGION="us-east1"
 
@@ -15,3 +17,5 @@ gcloud ai-platform jobs submit training $JOB_NAME \
     --region $REGION \
     --runtime-version=1.13\
     --python-version=3.5\
+    --BUCKET $BUCKET\
+    --MODEL_VERSION $MODEL_VERSION

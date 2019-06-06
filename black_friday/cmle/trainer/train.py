@@ -4,15 +4,30 @@ from google.cloud import storage
 import xgboost as xgb
 from sklearn.preprocessing import LabelEncoder
 from sklearn.externals import joblib
+import argparse
 
 def copy_to_gcs(source, dest):
     bucket = storage.Client().bucket(BUCKET)
     blob = bucket.blob(dest)
     blob.upload_from_filename(source)
 
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    '--BUCKET',
+    help='GCS location to write checkpoints and export models',
+    required=True,
+)
 
-BUCKET = 'doitintl_black_friday'
-MODEL_VERSION = 'v2'
+parser.add_argument(
+    '--MODEL_VERSION',
+    help='name of the model version to create',
+    type=int,
+    default=10
+)
+
+args = parser.parse_args()
+BUCKET = args.BUCKET
+MODEL_VERSION = args.MODEL_VERSION
 OPTIMAL_PARAMS = {}
 
 
