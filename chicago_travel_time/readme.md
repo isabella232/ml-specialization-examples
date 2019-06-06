@@ -7,7 +7,8 @@
 ## Running the model
 #### Parameters
 - **project_id** - ID of the Google Cloud project in which you run. must have at least Editor role
-- **dataset_id** - Create a BigQuery Dataset to store training datasets
+- **dataset_id** - Create a BigQuery Dataset to store training datasets,
+                   this is the name of the dataset without project prefix
 - **model_name** - Name of the model that will be used in AI platform
 - **model_version** - Name of the model version that will be used in AI platform 
 - **bucket_name** - Create a Google Cloud Storage bucket to store training artifacts 
