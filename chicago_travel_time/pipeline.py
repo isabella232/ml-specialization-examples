@@ -5,7 +5,9 @@ import time
 import pandas as pd
 import argparse
 
-
+JOB_RUNNING_STATES = ['QUEUED', 'PREPARING', 'RUNNING']
+JOB_COMPLETED_STATES = ['SUCCEEDED']
+JOB_FAILED_STATES = ['FAILED', 'CANCELLING', 'CANCELLED', 'STATE_UNSPECIFIED']
 
 def parse_args():
 
@@ -171,16 +173,24 @@ def monitor_training(cloudml_client, job_name):
     job_is_running = True
     while job_is_running:
         job_results = cloudml_client.projects().jobs().get(name='{}/jobs/{}'.format(project_name, job_name)).execute()
-        job_is_running = job_results['state'] in ['RUNNING', 'QUEUED']
-        if 'completedTrialCount' in job_results['trainingOutput']:
-            completed_trials = job_results['trainingOutput']['completedTrialCount']
-        else:
-            completed_trials = 0
+        if job_results['state'] in JOB_RUNNING_STATES:
 
-        print(str(datetime.utcnow()),
+            if 'completedTrialCount' in job_results['trainingOutput']:
+                completed_trials = job_results['trainingOutput']['completedTrialCount']
+            else:
+                completed_trials = 0
+
+            print(str(datetime.utcnow()),
               ': Completed {} training trials'.format(completed_trials),
               ' Waiting for 5 minutes')
-        time.sleep(5 * 60)
+            time.sleep(5 * 60)
+
+        elif job_results['state'] in JOB_FAILED_STATES:
+            job_is_running = False
+            job_results = None
+
+        elif job_results['state'] in JOB_FAILED_STATES:
+            job_is_running = False
 
     return job_results
 
