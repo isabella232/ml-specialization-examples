@@ -109,7 +109,6 @@ def create_train():
     job_config.destination = table_ref
     sql = query
 
-    # Start the query, passing in the extra configuration.
     query_job = client.query(
         sql,
         location='US',
@@ -117,10 +116,16 @@ def create_train():
 
     query_job.result()
     print('Query results loaded to table {}'.format(table_ref.path))
+
     return table_ref
 
 
 def export_training_to_gcs(table_ref):
+    """
+    Exporting the dataset table to GCS
+    :param table_ref: the table to export
+    :return:
+    """
     client = bigquery.Client()
     destination_uri = data_dir
     job_config = bigquery.ExtractJobConfig(print_header=False)
@@ -137,18 +142,31 @@ def export_training_to_gcs(table_ref):
 
 
 def train_hyper_params(cloudml_client, training_inputs):
+    """
+    Submit hyper parameters training job to AI platform
+    :param cloudml_client: discovery client
+    :param training_inputs: spec for the job
+    :return: the name of the job created
+    """
 
     job_name = 'chicago_travel_time_training_{}'.format(datetime.utcnow().strftime('%Y%m%d%H%M%S'))
     project_name = 'projects/{}'.format(project_id)
     job_spec = {'jobId': job_name, 'trainingInput': training_inputs}
     response = cloudml_client.projects().jobs().create(body=job_spec,
                                                 parent=project_name).execute()
-
     print(response)
+
     return job_name
 
 
 def monitor_training(cloudml_client, job_name):
+    """
+     Monitors the ongoing training job, when it stops running, returns the results json
+    :param cloudml_client:
+    :param job_name: the job id to monitor
+    :return: job_results
+    """
+
     # wait for job to complete
     job_is_running = True
     while job_is_running:
@@ -156,16 +174,23 @@ def monitor_training(cloudml_client, job_name):
         job_is_running = job_results['state'] in ['RUNNING', 'QUEUED']
         if 'completedTrialCount' in job_results['trainingOutput']:
             completed_trials = job_results['trainingOutput']['completedTrialCount']
-        else:  completed_trials = 0
+        else:
+            completed_trials = 0
 
         print(str(datetime.utcnow()),
               ': Completed {} training trials'.format(completed_trials),
               ' Waiting for 5 minutes')
         time.sleep(5 * 60)
+
     return job_results
 
 
 def create_model(cloudml_client):
+    """
+    Creates a Model entity in AI Platform
+    :param cloudml_client: discovery client
+    :return:
+    """
     models = cloudml_client.projects().models()
     create_spec = {'name': model_name}
 
@@ -174,6 +199,12 @@ def create_model(cloudml_client):
 
 
 def deploy_version(cloudml_client, job_results):
+    """
+    Deploying the best trail's model to AI platform
+    :param cloudml_client: discovery client
+    :param job_results: response of the finished AI platform job
+    :return:
+    """
     models = cloudml_client.projects().models()
 
     training_outputs = job_results['trainingOutput']
@@ -181,6 +212,8 @@ def deploy_version(cloudml_client, job_results):
         "name": model_version,
         "isDefault": False,
         "runtimeVersion": training_outputs['builtInAlgorithmOutput']['runtimeVersion'],
+
+        # Assuming the trials are sorted by performance (best is first)
         "deploymentUri": training_outputs['trials'][0]['builtInAlgorithmOutput']['modelPath'],
         "framework": training_outputs['builtInAlgorithmOutput']['framework'],
         "pythonVersion": training_outputs['builtInAlgorithmOutput']['pythonVersion'],
@@ -196,7 +229,11 @@ def deploy_version(cloudml_client, job_results):
 
 
 def validate_model():
-    df_val = pd.read_csv('{}/processed_data/validation.csv'.format(job_dir))
+    """
+    Function to validate the model results
+    :return:
+    """
+    df_val = pd.read_csv('{}/processed_data/test.csv'.format(job_dir))
     instances = [", ".join(x) for x in df_val.iloc[:10, 1:].astype(str).values.tolist()]
     service = discovery.build('ml', 'v1')
     version_name = 'projects/{}/models/{}'.format(project_id, model_name)
