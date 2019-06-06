@@ -15,37 +15,45 @@ def parse_args():
         '--project_id',
         help='Google Cloud Project ID',
         required=True,
+        type=str
     )
 
     parser.add_argument(
         '--dataset_id',
         help='Name of BigQuery Dataset ID to save training results',
-        type=int,
-        default=10
+        type=str,
     )
 
     parser.add_argument(
         '--model_name',
         help='name of the AI platform model that will be created',
         required=True,
+        type=str
+
     )
 
     parser.add_argument(
         '--model_version',
         help='name of the AI platform model version that will be created',
         required=True,
+        type=str
+
     )
 
     parser.add_argument(
         '--bucket_name',
         help='Name of the staging bucket',
         required=True,
+        type=str
+
     )
 
     parser.add_argument(
         '--create_model',
         help='create a new model? default is False',
         required=False,
+        type=bool
+
     )
     args = parser.parse_args()
 
@@ -221,7 +229,7 @@ if __name__ == '__main__':
     job_dir = "gs://{bucket}/models/{model_version}".format(bucket=bucket_name, model_version=model_version)
     CREATE_MODEL = args.create_model
 
-    with open('hyper_param_spec.json', 'r')  as f:
+    with open('hyper_param_spec.dict', 'r')  as f:
         training_inputs = eval(f.read())
         training_inputs['jobDir'] = job_dir
         training_inputs['args'].append('--training_data_path={DATA_DIR}'.format(DATA_DIR=data_dir))
