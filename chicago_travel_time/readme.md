@@ -15,5 +15,10 @@
 
 #### Submit pipeline job
 ```bash
-python3 pipeline.py --project_id PROJECT_ID   --dataset_id DATASET_ID --model_name MODEL_NAME --model_version MODEL_VERSION --bucket_name BUCKET --create_model [True|False]
+python3 pipeline.py --project_id PROJECT_ID \
+                    --dataset_id DATASET_ID\
+                    --model_name MODEL_NAME\
+                    --model_version MODEL_VERSION\
+                    --bucket_name BUCKET\
+                    --create_model [True|False]
 ```
