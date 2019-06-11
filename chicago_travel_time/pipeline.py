@@ -287,6 +287,8 @@ if __name__ == '__main__':
     model_version = args.model_version
     bucket_name = args.bucket_name
     data_dir = "gs://{bucket}/data/{table_name}.csv".format(bucket=bucket_name, table_name=train_table_name)
+    val_dir = "gs://{bucket}/data/{table_name}.csv".format(bucket=bucket_name, table_name=validation_table_name)
+
     job_dir = "gs://{bucket}/models/{model_version}".format(bucket=bucket_name, model_version=model_version)
     CREATE_MODEL = args.create_model
 
