@@ -305,13 +305,13 @@ if __name__ == '__main__':
     tabel_ref = create_train()
 
     print('Exporting training set to CGS...')
-    export_table_to_gcs(tabel_ref)
+    export_table_to_gcs(tabel_ref, train_table_name)
 
     print('Creating validation set in BQ...')
-    tabel_ref = create_train()
+    tabel_ref = create_validation()
 
     print('Exporting validation set to CGS...')
-    export_table_to_gcs(tabel_ref)
+    export_table_to_gcs(tabel_ref, validation_table_name)
 
     print('Submit hyperparmeter training...')
     job_name = train_hyper_params(cloudml_client, training_inputs)
