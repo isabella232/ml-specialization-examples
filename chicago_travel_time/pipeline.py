@@ -8,6 +8,48 @@ import argparse
 JOB_RUNNING_STATES = ['QUEUED', 'PREPARING', 'RUNNING']
 JOB_COMPLETED_STATES = ['SUCCEEDED']
 JOB_FAILED_STATES = ['FAILED', 'CANCELLING', 'CANCELLED', 'STATE_UNSPECIFIED']
+DATASET_QUERY = """
+        WITH dataset AS( SELECT 
+
+              EXTRACT(HOUR FROM  trip_start_timestamp) trip_start_hour
+            , EXTRACT(DAYOFWEEK FROM  trip_start_timestamp) trip_start_weekday
+            , EXTRACT(WEEK FROM  trip_start_timestamp) trip_start_week
+            , EXTRACT(DAYOFYEAR FROM  trip_start_timestamp) trip_start_yearday
+            , EXTRACT(MONTH FROM  trip_start_timestamp) trip_start_month
+            , (trip_miles * 1.60934 ) / ((trip_seconds + .01) / (60 * 60)) trip_speed_kmph
+            , trip_miles
+            , pickup_latitude
+            , pickup_longitude
+            , dropoff_latitude
+            , dropoff_longitude
+            , pickup_community_area
+            , dropoff_community_area
+            , ST_DISTANCE(
+              (ST_GEOGPOINT(pickup_longitude,pickup_latitude)),
+              (ST_GEOGPOINT(dropoff_longitude,dropoff_latitude))) air_distance
+            , CAST (trip_seconds AS FLOAT64) trip_seconds
+        FROM `bigquery-public-data.chicago_taxi_trips.taxi_trips` 
+            WHERE RAND() < (3000000/112860054) --sample maximum ~3M records 
+                    AND  {WHERE_CLAUSE}
+                    AND pickup_location IS NOT NULL
+                    AND dropoff_location IS NOT NULL)
+        SELECT 
+             trip_seconds
+            , air_distance
+            , pickup_latitude
+            , pickup_longitude
+            , dropoff_latitude
+            , dropoff_longitude
+            , pickup_community_area
+            , dropoff_community_area
+            , trip_start_hour
+            , trip_start_weekday
+            , trip_start_week
+            , trip_start_yearday
+            , trip_start_month
+        FROM dataset
+        WHERE trip_speed_kmph BETWEEN 5 AND 90
+    """
 
 def parse_args():
 
@@ -62,50 +104,9 @@ def parse_args():
 
     return args
 
-def create_train():
-    client = bigquery.Client()
-    query = """
-        WITH dataset AS( SELECT 
 
-              EXTRACT(HOUR FROM  trip_start_timestamp) trip_start_hour
-            , EXTRACT(DAYOFWEEK FROM  trip_start_timestamp) trip_start_weekday
-            , EXTRACT(WEEK FROM  trip_start_timestamp) trip_start_week
-            , EXTRACT(DAYOFYEAR FROM  trip_start_timestamp) trip_start_yearday
-            , EXTRACT(MONTH FROM  trip_start_timestamp) trip_start_month
-            , (trip_miles * 1.60934 ) / ((trip_seconds + .01) / (60 * 60)) trip_speed_kmph
-            , trip_miles
-            , pickup_latitude
-            , pickup_longitude
-            , dropoff_latitude
-            , dropoff_longitude
-            , pickup_community_area
-            , dropoff_community_area
-            , ST_DISTANCE(
-              (ST_GEOGPOINT(pickup_longitude,pickup_latitude)),
-              (ST_GEOGPOINT(dropoff_longitude,dropoff_latitude))) air_distance
-            , CAST (trip_seconds AS FLOAT64) trip_seconds
-        FROM `bigquery-public-data.chicago_taxi_trips.taxi_trips` 
-            WHERE RAND() < (3000000/112860054) --sample maximum ~3M records 
-                    AND  trip_start_timestamp < '2016-01-01'
-                    AND pickup_location IS NOT NULL
-                    AND dropoff_location IS NOT NULL)
-        SELECT 
-             trip_seconds
-            , air_distance
-            , pickup_latitude
-            , pickup_longitude
-            , dropoff_latitude
-            , dropoff_longitude
-            , pickup_community_area
-            , dropoff_community_area
-            , trip_start_hour
-            , trip_start_weekday
-            , trip_start_week
-            , trip_start_yearday
-            , trip_start_month
-        FROM dataset
-        WHERE trip_speed_kmph BETWEEN 5 AND 90
-    """
+def execute_query(query, table_name):
+    client = bigquery.Client()
     job_config = bigquery.QueryJobConfig()
     table_ref = client.dataset(dataset_id).table(table_name)
     job_config.destination = table_ref
@@ -122,7 +123,17 @@ def create_train():
     return table_ref
 
 
-def export_training_to_gcs(table_ref):
+def create_train():
+    query = DATASET_QUERY.format(WHERE_CLAUSE="trip_start_timestamp < '2016-01-01'")
+    return execute_query(query, train_table_name)
+
+
+def create_validation():
+    query = DATASET_QUERY.format(WHERE_CLAUSE="trip_start_timestamp >= '2016-01-01'")
+    return execute_query(query, validation_table_name)
+
+
+def export_table_to_gcs(table_ref, table_name):
     """
     Exporting the dataset table to GCS
     :param table_ref: the table to export
@@ -268,11 +279,14 @@ if __name__ == '__main__':
     project_id = args.project_id
     project_name = 'projects/{}'.format(project_id)
     dataset_id = args.dataset_id
-    table_name = 'train_{}'.format(datetime.utcnow().strftime('%Y%m%d%H%M%S'))
+    now = datetime.utcnow().strftime('%Y%m%d%H%M%S')
+    train_table_name = 'train_{}'.format(now)
+    validation_table_name = 'val_{}'.format(now)
+
     model_name = args.model_name
     model_version = args.model_version
     bucket_name = args.bucket_name
-    data_dir = "gs://{bucket}/data/{table_name}.csv".format(bucket=bucket_name, table_name=table_name)
+    data_dir = "gs://{bucket}/data/{table_name}.csv".format(bucket=bucket_name, table_name=train_table_name)
     job_dir = "gs://{bucket}/models/{model_version}".format(bucket=bucket_name, model_version=model_version)
     CREATE_MODEL = args.create_model
 
@@ -280,6 +294,8 @@ if __name__ == '__main__':
         training_inputs = eval(f.read())
         training_inputs['jobDir'] = job_dir
         training_inputs['args'].append('--training_data_path={DATA_DIR}'.format(DATA_DIR=data_dir))
+        training_inputs['args'].append('--validation_data_path={VAL_DIR}'.format(VAL_DIR=val_dir))
+
 
     cloudml_client = discovery.build('ml', 'v1')
 
@@ -287,7 +303,13 @@ if __name__ == '__main__':
     tabel_ref = create_train()
 
     print('Exporting training set to CGS...')
-    export_training_to_gcs(tabel_ref)
+    export_table_to_gcs(tabel_ref)
+
+    print('Creating validation set in BQ...')
+    tabel_ref = create_train()
+
+    print('Exporting validation set to CGS...')
+    export_table_to_gcs(tabel_ref)
 
     print('Submit hyperparmeter training...')
     job_name = train_hyper_params(cloudml_client, training_inputs)

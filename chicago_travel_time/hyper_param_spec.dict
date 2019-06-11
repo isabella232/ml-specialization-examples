@@ -3,7 +3,6 @@
         "masterType": "standard_gpu",
         "args": [
             "--preprocess",
-            "--validation_split=0.2",
             "--model_type=regression",
             "--hidden_units=120,60,60",
             "--batch_size=128",
