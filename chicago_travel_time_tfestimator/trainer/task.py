@@ -33,7 +33,7 @@ def metric(labels, predictions):
     pred_values = predictions['predictions']
     return {'rmse': tf.metrics.root_mean_squared_error(labels, pred_values),
             'mae': tf.metrics.mean_absolute_error(labels, pred_values),
-            'mean_rel_error': tf.metrics.mean_relative_error(labels, pred_values)}
+            'mean_rel_error': tf.metrics.mean_relative_error(labels, pred_values, labels)}
 
 def train_and_evaluate(args):
     """Run the training and evaluate using the high level API."""
