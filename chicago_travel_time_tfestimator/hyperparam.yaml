@@ -18,7 +18,7 @@ trainingInput:
       maxValue: 32
       scaleType: UNIT_LINEAR_SCALE
     - parameterName: first-layer-size
-        type: INTEGER
-        minValue: 32
-        maxValue: 128
-        scaleType: UNIT_LINEAR_SCALE
+      type: INTEGER
+      minValue: 32
+      maxValue: 128
+      scaleType: UNIT_LINEAR_SCALE
