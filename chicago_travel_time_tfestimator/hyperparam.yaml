@@ -1,0 +1,24 @@
+# https://github.com/GoogleCloudPlatform/cloudml-samples/tree/wenzhel-sklearn/xgboost/iris
+trainingInput:
+  hyperparameters:
+    goal: MINIMIZE
+    maxTrials: 20
+    maxParallelTrials: 2
+    hyperparameterMetricTag: rmse
+    enableTrialEarlyStopping: TRUE
+    params:
+    - parameterName: num-layers
+      type: INTEGER
+      minValue: 2
+      maxValue: 8
+      scaleType: UNIT_LINEAR_SCALE
+    - parameterName: embedding-size
+      type: INTEGER
+      minValue: 2
+      maxValue: 32
+      scaleType: UNIT_LINEAR_SCALE
+    - parameterName: first-layer-size
+        type: INTEGER
+        minValue: 32
+        maxValue: 128
+        scaleType: UNIT_LINEAR_SCALE

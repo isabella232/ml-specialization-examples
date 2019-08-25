@@ -1,0 +1,3 @@
+# The package is used for reporting hyperparameter tuning
+# metrics on CloudML Engine.
+cloudml-hypertune
