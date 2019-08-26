@@ -1,6 +1,8 @@
 # https://github.com/GoogleCloudPlatform/cloudml-samples/tree/wenzhel-sklearn/xgboost/iris
 
 BUCKET=doit-chicago-taxi
+PROJECT_ID=gad-playground-212407
+dataset_id=chicago_taxi
 TRAINER_PACKAGE_PATH="/Users/gad/PycharmProjects/ml-specialization-examples/chicago_travel_time_tfestimator/trainer"
 MAIN_TRAINER_MODULE="trainer.task"
 TIER=BASIC_GPU
@@ -22,4 +24,7 @@ gcloud ai-platform jobs submit training $JOB_NAME \
   --python-version $PYTHON_VERSION \
   --scale-tier $SCALE_TIER \
   --config hyperparam.yaml \
-  -- num-epochs 10
+  --num-epochs 10 \
+  --BUCKET $BUCKET \
+  --PROJECT_ID $PROJECT_ID \
+  --dataset_id $dataset_id

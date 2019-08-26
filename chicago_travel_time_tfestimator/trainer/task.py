@@ -8,6 +8,7 @@ import os
 import tensorflow as tf
 import trainer.input_funcs as input_module
 import trainer.model as model
+from trainer.dataset import create_datasets
 
 
 def _get_session_config_from_env_var():
@@ -175,6 +176,15 @@ if __name__ == '__main__':
         '--verbosity',
         choices=['DEBUG', 'ERROR', 'FATAL', 'INFO', 'WARN'],
         default='INFO')
+    PARSER.add_argument(
+        '--BUCKET',
+        help='bucket to store the data for the training')
+    PARSER.add_argument(
+        '--PROJECT_ID',
+        help='Google Cloud project id in which you run')
+    PARSER.add_argument(
+        '--dataset_id',
+        help='BigQuery Dataset ID in which you store the datasets')
 
     ARGUMENTS, _ = PARSER.parse_known_args()
 
@@ -183,6 +193,10 @@ if __name__ == '__main__':
     # Set C++ Graph Execution level verbosity
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = str(
         tf.compat.v1.logging.__dict__[ARGUMENTS.verbosity] / 10)
+
+    dadaset_paths = create_datasets(ARGUMENTS.BUCKET, ARGUMENTS.project_id, ARGUMENTS.dataset_id)
+    ARGUMENTS['train_files'] = dadaset_paths['train_path']
+    ARGUMENTS['eval_files'] = dadaset_paths['val_path_path']
 
     # Run the training job
     train_and_evaluate(ARGUMENTS)
