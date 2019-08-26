@@ -36,7 +36,7 @@ def metric(labels, predictions):
             'mae': tf.metrics.mean_absolute_error(labels, pred_values),
             'mean_rel_error': tf.metrics.mean_relative_error(labels, pred_values, labels)}
 
-def train_and_evaluate(args):
+def train_and_evaluate(args, dadaset_paths):
     """Run the training and evaluate using the high level API."""
 
     def train_input():
@@ -44,7 +44,7 @@ def train_and_evaluate(args):
         data set from training.
         """
         return input_module.input_fn(
-            args.train_files,
+            dadaset_paths['train_path'],
             num_epochs=args.num_epochs,
             batch_size=args.train_batch_size,
             num_parallel_calls=args.num_parallel_calls,
@@ -55,7 +55,7 @@ def train_and_evaluate(args):
         set for evaluation. Shuffling is not required.
         """
         return input_module.input_fn(
-            args.eval_files,
+            dadaset_paths['val_path'],
             batch_size=args.eval_batch_size,
             shuffle=False,
             num_parallel_calls=args.num_parallel_calls,
@@ -94,16 +94,6 @@ def train_and_evaluate(args):
 if __name__ == '__main__':
     PARSER = argparse.ArgumentParser()
     # Input Arguments
-    PARSER.add_argument(
-        '--train-files',
-        help='GCS file or local paths to training data',
-        nargs='+',
-        default='gs://doit-chicago-taxi/data/train_20190606101022.csv')
-    PARSER.add_argument(
-        '--eval-files',
-        help='GCS file or local paths to evaluation data',
-        nargs='+',
-        default='gs://doit-chicago-taxi/data/train_20190606100533.csv')
     PARSER.add_argument(
         '--job-dir',
         help='GCS location to write checkpoints and export models',
@@ -178,13 +168,16 @@ if __name__ == '__main__':
         default='INFO')
     PARSER.add_argument(
         '--BUCKET',
-        help='bucket to store the data for the training')
+        help='bucket to store the data for the training',
+        type=str)
     PARSER.add_argument(
         '--PROJECT_ID',
-        help='Google Cloud project id in which you run')
+        help='Google Cloud project id in which you run',
+        type=str)
     PARSER.add_argument(
-        '--dataset_id',
-        help='BigQuery Dataset ID in which you store the datasets')
+        '--DATASET_ID',
+        help='BigQuery Dataset ID in which you store the datasets',
+        type=str)
 
     ARGUMENTS, _ = PARSER.parse_known_args()
 
@@ -194,12 +187,11 @@ if __name__ == '__main__':
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = str(
         tf.compat.v1.logging.__dict__[ARGUMENTS.verbosity] / 10)
 
-    dadaset_paths = create_datasets(ARGUMENTS.BUCKET, ARGUMENTS.project_id, ARGUMENTS.dataset_id)
-    ARGUMENTS['train_files'] = dadaset_paths['train_path']
-    ARGUMENTS['eval_files'] = dadaset_paths['val_path_path']
+    # Create datasets
+    dadaset_paths = create_datasets(ARGUMENTS.BUCKET, ARGUMENTS.PROJECT_ID, ARGUMENTS.DATASET_ID)
 
     # Run the training job
-    train_and_evaluate(ARGUMENTS)
+    train_and_evaluate(ARGUMENTS, dadaset_paths)
 
 
 

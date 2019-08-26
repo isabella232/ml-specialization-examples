@@ -1,3 +1,5 @@
+# https://github.com/GoogleCloudPlatform/cloudml-samples/blob/master/census/estimator/trainer
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function

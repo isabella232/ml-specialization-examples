@@ -44,8 +44,8 @@ DATASET_QUERY = """
         WHERE trip_speed_kmph BETWEEN 5 AND 90
     """
 
-def execute_query(query, table_name, dataset_id):
-    client = bigquery.Client()
+def execute_query(query, table_name, dataset_id, project_id):
+    client = bigquery.Client(project=project_id)
     job_config = bigquery.QueryJobConfig()
     table_ref = client.dataset(dataset_id).table(table_name)
     job_config.destination = table_ref
@@ -62,14 +62,14 @@ def execute_query(query, table_name, dataset_id):
     return table_ref
 
 
-def create_train(train_table_name, dataset_id):
+def create_train(train_table_name, dataset_id, project_id):
     query = DATASET_QUERY.format(WHERE_CLAUSE="trip_start_timestamp < '2016-01-01'")
-    return execute_query(query, train_table_name, dataset_id)
+    return execute_query(query, train_table_name, dataset_id, project_id)
 
 
-def create_validation(validation_table_name, dataset_id):
+def create_validation(validation_table_name, dataset_id, project_id):
     query = DATASET_QUERY.format(WHERE_CLAUSE="trip_start_timestamp >= '2016-01-01'")
-    return execute_query(query, validation_table_name, dataset_id)
+    return execute_query(query, validation_table_name, dataset_id, project_id)
 
 
 def export_table_to_gcs(table_ref, table_name, data_dir, project_id, dataset_id):
@@ -101,13 +101,13 @@ def create_datasets(bucket_name, project_id, dataset_id):
     val_dir = "gs://{bucket}/data/{table_name}.csv".format(bucket=bucket_name, table_name=validation_table_name)
 
     print('Creating training set in BQ...')
-    tabel_ref = create_train(train_table_name, dataset_id)
+    tabel_ref = create_train(train_table_name, dataset_id, project_id)
 
     print('Exporting training set to CGS...')
     export_table_to_gcs(tabel_ref, train_table_name,  data_dir, project_id, dataset_id)
 
     print('Creating validation set in BQ...')
-    tabel_ref = create_validation(validation_table_name, dataset_id)
+    tabel_ref = create_validation(validation_table_name, dataset_id, project_id)
 
     print('Exporting validation set to CGS...')
     export_table_to_gcs(tabel_ref, validation_table_name, val_dir, project_id, dataset_id)

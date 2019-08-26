@@ -1,3 +1,5 @@
+# https://github.com/GoogleCloudPlatform/cloudml-samples/blob/master/census/estimator/trainer
+
 import multiprocessing
 import tensorflow as tf
 

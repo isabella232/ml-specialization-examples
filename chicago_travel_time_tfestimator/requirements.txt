@@ -1,3 +1,2 @@
-# The package is used for reporting hyperparameter tuning
-# metrics on CloudML Engine.
-cloudml-hypertune
+google-cloud-bigquery==1.8.1
+google-api-python-client

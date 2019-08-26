@@ -1,13 +1,5 @@
-# Copyright 2016 Google Inc. All Rights Reserved. Licensed under the Apache
-# License, Version 2.0 (the "License"); you may not use this file except in
-# compliance with the License. You may obtain a copy of the License at
-# http://www.apache.org/licenses/LICENSE-2.0
+# https://github.com/GoogleCloudPlatform/cloudml-samples/blob/master/census/estimator/trainer
 
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-# License for the specific language governing permissions and limitations under
-# the License.
 """Defines a Wide + Deep model for classification on structured data.
 
 Tutorial on wide and deep: https://www.tensorflow.org/tutorials/wide_and_deep/
@@ -33,7 +25,7 @@ INPUT_COLUMNS = [
         'trip_start_week', list(range(53))
     ),
     tf.feature_column.categorical_column_with_vocabulary_list(
-        'trip_start_month', list(range(1,13))),
+        'trip_start_month', list(range(1, 13))),
     
     # For columns with a large number of values, or unknown values
     # We can use a hash function to convert to categories.

@@ -1,4 +1,3 @@
-google-cloud-bigquery
-google-api-python-client
+c
 pandas
 import

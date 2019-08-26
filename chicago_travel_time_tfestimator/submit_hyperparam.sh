@@ -24,6 +24,7 @@ gcloud ai-platform jobs submit training $JOB_NAME \
   --python-version $PYTHON_VERSION \
   --scale-tier $SCALE_TIER \
   --config hyperparam.yaml \
+   -- \
   --num-epochs 10 \
   --BUCKET $BUCKET \
   --PROJECT_ID $PROJECT_ID \
