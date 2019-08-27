@@ -21,6 +21,7 @@ gcloud ai-platform jobs submit training $JOB_NAME \
     --python-version=3.5 \
     --scale-tier $TIER \
     -- \
+    --CREATE_DATASET "TRUE" \
     --BUCKET $BUCKET \
     --PROJECT_ID $PROJECT_ID \
     --DATASET_ID $DATASET_ID

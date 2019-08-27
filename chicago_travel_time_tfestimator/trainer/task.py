@@ -95,6 +95,12 @@ if __name__ == '__main__':
     PARSER = argparse.ArgumentParser()
     # Input Arguments
     PARSER.add_argument(
+        '--train-data',
+        help='GCS file or local paths to training data',)
+    PARSER.add_argument(
+        '--val-data',
+        help='GCS file or local paths to evaluation data')
+    PARSER.add_argument(
         '--job-dir',
         help='GCS location to write checkpoints and export models',
         default='/tmp/tensorboard-logs/model-1')
@@ -178,6 +184,10 @@ if __name__ == '__main__':
         '--DATASET_ID',
         help='BigQuery Dataset ID in which you store the datasets',
         type=str)
+    PARSER.add_argument(
+        '--CREATE_DATASET',
+        choices=['TRUE', 'FALSE'],
+        default='FALSE')
 
     ARGUMENTS, _ = PARSER.parse_known_args()
 
@@ -188,7 +198,12 @@ if __name__ == '__main__':
         tf.compat.v1.logging.__dict__[ARGUMENTS.verbosity] / 10)
 
     # Create datasets
-    dadaset_paths = create_datasets(ARGUMENTS.BUCKET, ARGUMENTS.PROJECT_ID, ARGUMENTS.DATASET_ID)
+    if ARGUMENTS.CREATE_DATASET == "TRUE":
+        dadaset_paths = create_datasets(ARGUMENTS.BUCKET, ARGUMENTS.PROJECT_ID, ARGUMENTS.DATASET_ID)
+
+    #Load dataset
+    elif ARGUMENTS.CREATE_DATASET == "FALSE":
+        dadaset_paths = {'train_path': ARGUMENTS.train_data, 'val_path':  ARGUMENTS.val_data}
 
     # Run the training job
     train_and_evaluate(ARGUMENTS, dadaset_paths)
