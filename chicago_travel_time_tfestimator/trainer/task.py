@@ -61,8 +61,6 @@ def train_and_evaluate(args, dadaset_paths):
             num_parallel_calls=args.num_parallel_calls,
             prefetch_buffer_size=args.prefetch_buffer_size)
 
-    train_spec = tf.estimator.TrainSpec(
-        train_input, max_steps=args.train_steps)
 
     exporter = tf.estimator.FinalExporter(
         'chicago-taxi', input_module.SERVING_FUNCTIONS[args.export_format])
@@ -86,8 +84,16 @@ def train_and_evaluate(args, dadaset_paths):
         ],
         config=run_config)
 
-    estimator = tf.contrib.estimator.add_metrics(estimator, metric)
+    early_stopping = tf.contrib.estimator.stop_if_no_decrease_hook(
+        estimator,
+        metric_name='loss',
+        max_steps_without_decrease=1000,
+        min_steps=100)
 
+    train_spec = tf.estimator.TrainSpec(
+        train_input, max_steps=args.train_steps, hooks=[early_stopping])
+
+    estimator = tf.contrib.estimator.add_metrics(estimator, metric)
     tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
 
 
@@ -103,7 +109,7 @@ if __name__ == '__main__':
     PARSER.add_argument(
         '--job-dir',
         help='GCS location to write checkpoints and export models',
-        default='/tmp/tensorboard-logs/model-1')
+        default='/tmp/tensorboard-logs')
     PARSER.add_argument(
         '--num-parallel-calls',
         help='Number of threads used to read in parallel the training and evaluation',
