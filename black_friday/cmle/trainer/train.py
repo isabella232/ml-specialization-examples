@@ -11,20 +11,25 @@ def copy_to_gcs(source, dest):
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    '--BUCKET',
+    '--BUCKET_ID',
     help='GCS location to write checkpoints and export models',
     required=True,
 )
-
 parser.add_argument(
     '--MODEL_VERSION',
     help='name of the model version to create',
-    type=int,
-    default=10
+    type=str,
+    default='v63'
+)
+parser.add_argument(
+    '--train-file',
+    help='path to training file',
+    required=True,
 )
 
+
 args = parser.parse_args()
-BUCKET = args.BUCKET
+BUCKET = args.BUCKET_ID
 MODEL_VERSION = args.MODEL_VERSION
 OPTIMAL_PARAMS = {}
 
@@ -51,7 +56,7 @@ label = 'Purchase'
 
 # Read the data
 print("Reading file...")
-df = pd.read_csv('gs://{BUCKET}/data/train_data.csv/part-00000-6a527ad3-ad67-4928-86a7-9d568115b70f-c000.csv'.format(BUCKET=BUCKET))
+df = pd.read_csv(args.train_file)
 
 dtrain = xgb.DMatrix(df[features], label=df[label])
 

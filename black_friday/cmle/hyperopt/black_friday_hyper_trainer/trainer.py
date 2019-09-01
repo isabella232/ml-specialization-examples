@@ -3,7 +3,6 @@ import pandas as pd
 import xgboost as xgb
 from sklearn.model_selection import train_test_split
 import hypertune
-from sklearn.preprocessing import LabelEncoder
 from google.cloud import storage
 
 parser = argparse.ArgumentParser()
@@ -12,18 +11,24 @@ parser.add_argument(
     help='GCS location to write checkpoints and export models',
     required=True,
 )
-
 parser.add_argument(
-    '--num-boost-round',
-    help='Number of boosting iterations.',
-    type=int,
-    default=10
-)
-
-
-parser.add_argument(
-    '--BUCKET',
+    '--BUCKET_ID',
     help='GCS bucket',
+    required=True,
+)
+parser.add_argument(
+    '--max_depth',
+    help='max depth for training',
+    required=True,
+)
+parser.add_argument(
+    '--learning_rate',
+    help='learning rate for training',
+    required=True,
+)
+parser.add_argument(
+    '--train-file',
+    help='path to training file',
     required=True,
 )
 
@@ -40,56 +45,50 @@ def download_blob(bucket_name, source_blob_name, destination_file_name):
         destination_file_name))
 
 args = parser.parse_args()
-BUCKET = args.BUCKET
+BUCKET = args.BUCKET_ID
+local_train_path = '/tmp/data.csv'
 
 # Define features and target
-features = ['User_ID', 'Product_ID', 'Gender', 'Age', 'Occupation',
-            u'City_Category', 'Stay_In_Current_City_Years', 'Marital_Status',
-            'Product_Category_1', 'Product_Category_2', 'Product_Category_3']
-categorical_features = ['User_ID', 'Product_ID', 'Gender', 'Age', 'Occupation',
-                        'City_Category', 'Marital_Status', 'Product_Category_1',
-                        'Product_Category_2', 'Product_Category_3', 'Stay_In_Current_City_Years']
+features = ['product_id',
+ 'gender',
+ 'age',
+ 'occupation',
+ 'city_category',
+ 'stay_in_current_city_years',
+ 'marital_status',
+ 'product_category_1',
+ 'product_category_2',
+ 'product_category_3']
+
 label = 'Purchase'
 
+download_blob(BUCKET, args.train_file, local_train_path)
+
 # Read the data
-download_blob(BUCKET, 'data/BlackFriday.csv', '/tmp/black_friday_train.csv')
 print("Reading file...")
-df = pd.read_csv('/tmp/black_friday_train.csv')
+df = pd.read_csv(local_train_path)
 
-# Train Encoders
-print("Training encoders...")
-encoders = {}
-for cat_feature in categorical_features:
-    print('Fitting categorical feature label encoder to:', cat_feature)
-    le = LabelEncoder()
-    le.fit(df[cat_feature])
-    encoders[cat_feature] = le
-
-
-# Build Traning set
-print("Encoding Features...")
-df_train = pd.DataFrame(index=df.index.copy())
-for feature in features:
-    print("converting: ", feature)
-    if feature in categorical_features:
-        vals = encoders[feature].transform(df[feature].dropna())
-        tmp_srs = df[[feature]].copy()
-        tmp_srs.loc[df[feature].notnull(),feature] = vals
-        df_train = df_train.merge(tmp_srs, left_index=True, right_index=True, how='left')
-    else:
-        df_train[feature] = df[feature].copy()
-
-X_train, X_test, y_train, y_test = train_test_split(df_train[features].astype(float), df[label].astype(float),
+X_train, X_test, y_train, y_test = train_test_split(df[features].astype(float), df[label].astype(float),
                                                     train_size=0.7, random_state=0)
+
 dtrain = xgb.DMatrix(X_train, label=y_train)
-
-bst = xgb.train(params={}, dtrain=dtrain, num_boost_round=10)
-
 deval = xgb.DMatrix(X_test, label=y_test)
+
+params = {
+    'max_depth': args.max_depth,
+    'learning_rate': args.learning_rate,
+    'objective':'reg:linear',
+    'eval_metric':'rmse'
+}
+bst = xgb.train(params=params, dtrain=dtrain,
+                evals=[(deval,'val_1')],
+                num_boost_round=10000,
+                early_stopping_rounds=100)
+
 rmse = float(bst.eval(deval).split(':')[1])
 
 hpt = hypertune.HyperTune()
 hpt.report_hyperparameter_tuning_metric(
     hyperparameter_metric_tag='rmse',
     metric_value=rmse,
-    global_step=1)
+    global_step=bst.best_iteration)

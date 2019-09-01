@@ -2,12 +2,17 @@
 trainingInput:
   hyperparameters:
     goal: MINIMIZE
-    maxTrials: 20
+    maxTrials: 10
     maxParallelTrials: 5
-    hyperparameterMetricTag: my_metric_tag
+    hyperparameterMetricTag: rmse
     enableTrialEarlyStopping: TRUE
     params:
-    - parameterName: num-boost-round
+    - parameterName: learning_rate
+      type: DOUBLE
+      minValue: 0.01
+      maxValue: 0.5
+      scaleType: UNIT_LINEAR_SCALE
+    - parameterName: max_depth
       type: INTEGER
       minValue: 2
       maxValue: 25
