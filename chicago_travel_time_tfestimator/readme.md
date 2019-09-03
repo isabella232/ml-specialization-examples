@@ -2,7 +2,7 @@
 
 - Machine Learning pipeline to predict travel time of Chicago taxi rides based on pickup and dropoff locations and the time of ride start.
 - The pipeline collects a sample data from BigQuery open dataset, preprocesses, launches an AI platform hyper parameters training job and trains the final.
-- The model built is a Tensorflow deep neural network.
+- The model built is a Tensorflow wide and deep neural network.
 
 ## Creating a dataset
 Before running a hyper parameter training job it is required that you create a training and validation set. 
