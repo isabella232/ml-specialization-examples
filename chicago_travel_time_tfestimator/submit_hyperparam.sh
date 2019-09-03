@@ -1,9 +1,9 @@
 # https://github.com/GoogleCloudPlatform/cloudml-samples/tree/wenzhel-sklearn/xgboost/iris
 
-BUCKET=doit-chicago-taxi
-PROJECT_ID=gad-playground-212407
-DATASET_ID=chicago_taxi
-TRAINER_PACKAGE_PATH="/Users/gad/PycharmProjects/ml-specialization-examples/chicago_travel_time_tfestimator/trainer"
+BUCKET=[BUCKET_NAME]
+PROJECT_ID=[PROJECT_ID]
+DATASET_ID=[DATASET_NAME]
+TRAINER_PACKAGE_PATH="[LOCAL_BASE_DIR]/ml-specialization-examples/chicago_travel_time_tfestimator/trainer"
 MAIN_TRAINER_MODULE="trainer.task"
 TIER=BASIC_GPU
 REGION="us-east1"
@@ -13,8 +13,8 @@ SCALE_TIER=BASIC
 JOB_NAME="chicago_hptuning_$(date +"%Y%m%d_%H%M%S")"
 JOB_DIR=gs://$BUCKET/$JOB_NAME
 PACKAGE_STAGING_PATH="gs://$BUCKET"
-TRAIN_DATA="gs://doit-chicago-taxi/data/train_20190826230154.csv"
-VAL_DATA="gs://doit-chicago-taxi/data/val_20190826230154.csv"
+TRAIN_DATA="gs://$BUCKET/data/train_20190826230154.csv"
+VAL_DATA="gs://$BUCKET/data/val_20190826230154.csv"
 
 gcloud ai-platform jobs submit training $JOB_NAME \
   --job-dir $JOB_DIR \

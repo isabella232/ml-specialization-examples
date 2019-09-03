@@ -1,8 +1,8 @@
 
-TRAINER_PACKAGE_PATH="/Users/gad/PycharmProjects/ml-specialization-examples/chicago_travel_time_tfestimator/trainer"
+TRAINER_PACKAGE_PATH="[LOCAL_BASE_DIR]/ml-specialization-examples/chicago_travel_time_tfestimator/trainer"
 MAIN_TRAINER_MODULE="trainer.task"
-BUCKET=doit-chicago-taxi
-PROJECT_ID="gad-playground-212407"
+BUCKET=[BUCKET]
+PROJECT_ID=[PROJECT_ID]
 DATASET_ID=chicago_taxi
 PACKAGE_STAGING_PATH="gs://$BUCKET"
 now=$(date +"%Y%m%d_%H%M%S")
