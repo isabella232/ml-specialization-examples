@@ -10,3 +10,6 @@ gsutil cp preprocessing.py TRAIN_FILE
 gcloud dataproc jobs submit pyspark $PY_FILE \
     --cluster $CLUSTER_NAME --region $REGION
 
+#call this after the job is completed
+#gcloud dataproc clusters delete $CLUSTER_NAME
+
