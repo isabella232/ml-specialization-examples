@@ -114,3 +114,21 @@ def create_datasets(bucket_name, project_id, dataset_id):
 
     return {'train_path': data_dir,
             'val_path': val_dir}
+
+if __name__ == '__main__':
+    import argparse
+
+    PARSER = argparse.ArgumentParser()
+    # Input Arguments
+    PARSER.add_argument(
+        '-dataset-id',
+        help='name of the dataset to store training data', )
+    PARSER.add_argument(
+        '--bucket-name',
+        help='bucket name to export the training data')
+    PARSER.add_argument(
+        '--project-id',
+        help='GCP project id')
+
+    args, _ = PARSER.parse_known_args()
+    print(create_datasets(args.bucket_name, args.project_id, args.dataset_id))
