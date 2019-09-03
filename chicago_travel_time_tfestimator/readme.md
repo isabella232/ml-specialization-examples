@@ -25,13 +25,13 @@ bash ./trainer/dataset.py --project-id PROJECT_ID \
 In order to find optimal training parameters for the model, we recommend to run the hyperparameter training job.
 You will need to modify some parameters in the submit_hyperparam.sh file. the rest of the params will be set automatically.
 #### Parameters
--**BUCKET** - the staging bucket for the AI-Platform job
--**PROJECT_ID** - the project id in which you run
--**DATASET_ID** - Create a BigQuery Dataset to store training datasets,
-                   this is the name of the dataset without project prefix
--**TRAINER_PACKAGE_PATH** - path to the training code on the machine from which you run the training command
--**TRAIN_DATA** - path to the training csv created in the previous stage
--**VAL_DATA** - path to the validation csv created in the previous stage
+- **BUCKET** - the staging bucket for the AI-Platform job
+- **PROJECT_ID** - the project id in which you run
+- **DATASET_ID** - Create a BigQuery Dataset to store training datasets,
+                    this is the name of the dataset without project prefix
+- **TRAINER_PACKAGE_PATH** - path to the training code on the machine from which you run the training command
+- **TRAIN_DATA** - path to the training csv created in the previous stage
+- **VAL_DATA** - path to the validation csv created in the previous stage
 
 #### Submit pipeline job
 ```bash
@@ -45,11 +45,11 @@ The training job will create a new dataset (by default). You will need to change
 You will need to modify some parameters in the submit_training.sh file. the rest of the params will be set automatically.
  
 #### Parameters
--**BUCKET** - the staging bucket for the AI-Platform job
--**PROJECT_ID** - the project id in which you run
--**DATASET_ID** - Create a BigQuery Dataset to store training datasets,
-                   this is the name of the dataset without project prefix
--**CREATE_DATASET** - FALSE or TRUE based on whether you wish to create a training file or provide one.
+- **BUCKET** - the staging bucket for the AI-Platform job
+- **PROJECT_ID** - the project id in which you run
+- **DATASET_ID** - Create a BigQuery Dataset to store training datasets,
+                    this is the name of the dataset without project prefix
+- **CREATE_DATASET** - FALSE or TRUE based on whether you wish to create a training file or provide one.
 
 #### Submit pipeline job
 ```bash
